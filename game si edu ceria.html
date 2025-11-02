@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agen Sehat Kalikajar: Misi Anti-Anemia</title>
+    <style>
+        /* CSS untuk Styling Game */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #e0f7fa;
+            color: #004d40;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        #game-container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #00796b;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        #status-bar {
+            display: flex;
+            justify-content: space-around;
+            background-color: #b2dfdb;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        #status-bar p {
+            margin: 0;
+        }
+
+        #map {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .location-btn {
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .location-btn[data-pos="1"] { background-color: #ffcc80; }
+        .location-btn[data-pos="2"] { background-color: #80cbc4; }
+        .location-btn[data-pos="3"] { background-color: #ffab91; }
+        .location-btn[data-pos="4"] { background-color: #c5e1a5; }
+
+        .location-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            opacity: 0.9;
+        }
+
+        .location-btn:disabled {
+            background-color: #eeeeee !important;
+            color: #aaaaaa;
+            cursor: not-allowed;
+        }
+
+        #quiz-area {
+            border: 2px solid #00796b;
+            border-radius: 10px;
+            padding: 20px;
+            background-color: #f4fffb;
+        }
+
+        #question {
+            font-size: 1.1em;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        #options button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #00bcd4;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        #options button:hover {
+            background-color: #0097a7;
+        }
+
+        #feedback-message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            display: none; /* Akan ditampilkan oleh JS */
+        }
+
+        .correct { background-color: #4caf50; color: white; }
+        .incorrect { background-color: #f44336; color: white; }
+
+        #next-btn, #restart-btn {
+            padding: 10px 20px;
+            margin-top: 20px;
+            background-color: #ff9800;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #next-btn:hover, #restart-btn:hover {
+            background-color: #fb8c00;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <h1>Agen Sehat Kalikajar: Misi Anti-Anemia</h1>
+        
+        <div id="status-bar">
+            <p>Level: <span id="level">1 - Agen Baru</span></p>
+            <p>Poin Zat Besi: <span id="energy">100</span>/100</p>
+        </div>
+        
+        <div id="map">
+            <button class="location-btn" data-pos="1">Pos 1: Kenali Anemia 👩‍⚕️</button>
+            <button class="location-btn" data-pos="2" disabled>Pos 2: Pojok TTD 💊</button>
+            <button class="location-btn" data-pos="3" disabled>Pos 3: Kantin Sehat 🍏</button>
+            <button class="location-btn" data-pos="4" disabled>Pos 4: Promosi Sehat 📢</button>
+        </div>
+        
+        <div id="quiz-area" style="display: none;">
+            <h2 id="quiz-title"></h2>
+            <p id="question"></p>
+            <div id="options"></div>
+            <div id="feedback-message"></div>
+            <button id="next-btn" style="display: none;">Lanjut Misi</button>
+        </div>
+
+        <button id="restart-btn" style="display: none;">Ulangi Misi</button>
+    </div>
+    
+    <script>
+        // JavaScript untuk Logika Game
+        const gameData = {
+            1: {
+                title: "Pos 1: Kenali Anemia",
+                questions: [
+                    {
+                        q: "Apa gejala utama '5L' yang sering dirasakan remaja yang mengalami anemia?",
+                        options: ["Lapar, Lelah, Loncat, Lari, Lesu", "Lesu, Letih, Lemah, Lelah, Lalai", "Lincah, Lapar, Lesu, Lari, Lambat"],
+                        answer: "Lesu, Letih, Lemah, Lelah, Lalai",
+                        feedback: "BENAR! 5L adalah tanda utama kurang darah. Anemia juga ditandai dengan wajah pucat dan sering pusing. Anemia pada remaja putri sangat erat kaitannya dengan risiko stunting pada anak kelak."
+                    },
+                    {
+                        q: "Apa dampak anemia pada remaja putri bagi kehamilan di masa depan?",
+                        options: ["Meningkatkan IQ anak", "Risiko melahirkan bayi BBLR (Berat Badan Lahir Rendah) dan Stunting", "Membuat proses persalinan lebih cepat"],
+                        answer: "Risiko melahirkan bayi BBLR (Berat Badan Lahir Rendah) dan Stunting",
+                        feedback: "BENAR! Kekurangan gizi kronis, termasuk anemia, pada remaja putri berisiko tinggi menyebabkan stunting pada generasi berikutnya. Ini yang harus kita cegah sejak dini!"
+                    }
+                ]
+            },
+            2: {
+                title: "Pos 2: Pojok TTD (Tablet Tambah Darah)",
+                questions: [
+                    {
+                        q: "Berapa kali dalam seminggu remaja putri disarankan minum Tablet Tambah Darah (TTD)?",
+                        options: ["Setiap hari", "Seminggu sekali", "Sebulan sekali"],
+                        answer: "Seminggu sekali",
+                        feedback: "BENAR! Remaja putri cukup minum TTD satu tablet setiap minggu untuk menjaga kadar zat besi dan mencegah anemia. Jangan lupa minum secara rutin!"
+                    },
+                    {
+                        q: "Minuman apa yang sebaiknya dihindari saat mengonsumsi TTD karena dapat menghambat penyerapan zat besi?",
+                        options: ["Air putih", "Jus Jeruk/Vitamin C", "Kopi, Teh, atau Susu"],
+                        answer: "Kopi, Teh, atau Susu",
+                        feedback: "BENAR! Kafein dalam kopi/teh dan kalsium dalam susu dapat mengikat zat besi. Selalu minum TTD dengan air putih atau dibantu Jus Buah yang kaya Vitamin C!"
+                    }
+                ]
+            },
+            3: {
+                title: "Pos 3: Kantin Sehat",
+                questions: [
+                    {
+                        q: "Kelompok makanan manakah yang merupakan sumber zat besi terbaik untuk mencegah anemia?",
+                        options: ["Permen, Kerupuk, Minuman Bersoda", "Sayuran Hijau Gelap, Hati Ayam/Sapi, Ikan", "Nasi Putih, Air Mineral, Gula"],
+                        answer: "Sayuran Hijau Gelap, Hati Ayam/Sapi, Ikan",
+                        feedback: "BENAR! Sumber zat besi hewani (Hati, Daging) dan nabati (Sayuran hijau) sangat penting. Ingat juga untuk makan makanan yang mengandung Vitamin C seperti jeruk dan jambu biji agar zat besi lebih mudah diserap!"
+                    }
+                ]
+            },
+            4: {
+                title: "Pos 4: Promosi Sehat",
+                questions: [
+                    {
+                        q: "Jika temanmu sering mengeluh pusing dan terlihat lesu di sekolah, tindakan terbaik yang harus kamu lakukan sebagai 'Agen Sehat' adalah:",
+                        options: ["Mengajaknya minum TTD hari itu juga", "Memintanya istirahat dan mengajaknya ke UKS/Puskesmas untuk cek HB", "Membiarkannya karena itu hal biasa"],
+                        answer: "Memintanya istirahat dan mengajaknya ke UKS/Puskesmas untuk cek HB",
+                        feedback: "BENAR! Sebagai Agen Sehat, kita harus peka. Ajak teman untuk beristirahat dan segera periksa kadar Hemoglobin (HB) di fasilitas kesehatan (Puskesmas/Posyandu Remaja) untuk penanganan yang tepat."
+                    }
+                ]
+            }
+        };
+
+        let currentPos = 1;
+        let currentQuizIndex = 0;
+        let currentEnergy = 100;
+        const ENERGY_CORRECT = 5;
+        const ENERGY_INCORRECT = -10;
+        let completedPos = 0;
+
+        const elLevel = document.getElementById('level');
+        const elEnergy = document.getElementById('energy');
+        const elMap = document.getElementById('map');
+        const elQuizArea = document.getElementById('quiz-area');
+        const elQuizTitle = document.getElementById('quiz-title');
+        const elQuestion = document.getElementById('question');
+        const elOptions = document.getElementById('options');
+        const elFeedback = document.getElementById('feedback-message');
+        const elNextBtn = document.getElementById('next-btn');
+        const elRestartBtn = document.getElementById('restart-btn');
+        const locationBtns = document.querySelectorAll('.location-btn');
+
+        // --- Fungsi Utama Game ---
+
+        function updateStatus() {
+            elEnergy.textContent = currentEnergy;
+            elLevel.textContent = completedPos >= 4 ? "5 - Agen Super Sehat" : `${completedPos + 1} - Agen Berdedikasi`;
+            if (currentEnergy <= 0) {
+                gameOver("Kesehatanmu habis! Kamu perlu perbaikan gizi dan istirahat. Silakan ulangi misi!");
+            }
+        }
+
+        function loadQuiz(pos) {
+            currentPos = pos;
+            currentQuizIndex = 0;
+            elMap.style.display = 'none';
+            elQuizArea.style.display = 'block';
+            elFeedback.style.display = 'none';
+            elNextBtn.style.display = 'none';
+            
+            displayQuestion();
+        }
+
+        function displayQuestion() {
+            const quizData = gameData[currentPos];
+            const qData = quizData.questions[currentQuizIndex];
+            
+            elQuizTitle.textContent = quizData.title;
+            elQuestion.textContent = qData.q;
+            elOptions.innerHTML = '';
+            elFeedback.style.display = 'none';
+
+            qData.options.forEach(option => {
+                const btn = document.createElement('button');
+                btn.textContent = option;
+                btn.onclick = () => checkAnswer(btn, option, qData);
+                elOptions.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(button, userAnswer, qData) {
+            const isCorrect = userAnswer === qData.answer;
+            
+            // Nonaktifkan semua tombol setelah menjawab
+            elOptions.querySelectorAll('button').forEach(btn => btn.disabled = true);
+            
+            if (isCorrect) {
+                currentEnergy = Math.min(100, currentEnergy + ENERGY_CORRECT);
+                elFeedback.className = 'correct';
+                elFeedback.innerHTML = `✅ **BENAR!** Poin Zat Besi +${ENERGY_CORRECT}. <br>${qData.feedback}`;
+            } else {
+                currentEnergy = Math.max(0, currentEnergy + ENERGY_INCORRECT);
+                elFeedback.className = 'incorrect';
+                elFeedback.innerHTML = `❌ **SALAH!** Poin Zat Besi ${ENERGY_INCORRECT}. <br>Jawaban yang benar: ${qData.answer}. <br>Penjelasan: ${qData.feedback}`;
+            }
+            
+            elFeedback.style.display = 'block';
+            updateStatus();
+
+            // Tentukan apakah ada pertanyaan berikutnya atau misi selesai
+            if (currentQuizIndex < gameData[currentPos].questions.length - 1) {
+                elNextBtn.textContent = 'Pertanyaan Selanjutnya';
+                elNextBtn.onclick = () => {
+                    currentQuizIndex++;
+                    displayQuestion();
+                };
+            } else {
+                completedPos++;
+                elNextBtn.textContent = 'Kembali ke Peta Misi';
+                elNextBtn.onclick = returnToMap;
+            }
+            elNextBtn.style.display = 'block';
+        }
+
+        function returnToMap() {
+            // Aktifkan pos selanjutnya
+            locationBtns.forEach(btn => {
+                const pos = parseInt(btn.getAttribute('data-pos'));
+                if (pos <= completedPos + 1) {
+                    btn.disabled = false;
+                }
+            });
+
+            elMap.style.display = 'grid';
+            elQuizArea.style.display = 'none';
+            updateStatus();
+
+            if (completedPos >= 4) {
+                gameOver("SELAMAT! Kamu telah menyelesaikan semua misi dan menjadi **Agen Super Sehat Kalikajar**. Kamu siap mengedukasi teman-temanmu tentang pencegahan anemia dan stunting!");
+            }
+        }
+
+        function gameOver(message) {
+            elMap.style.display = 'none';
+            elQuizArea.style.display = 'none';
+            elFeedback.className = '';
+            elFeedback.innerHTML = `<h2>Misi Selesai!</h2><p>${message}</p>`;
+            elFeedback.style.display = 'block';
+            elRestartBtn.style.display = 'block';
+        }
+
+        function restartGame() {
+            currentPos = 1;
+            currentQuizIndex = 0;
+            currentEnergy = 100;
+            completedPos = 0;
+            elRestartBtn.style.display = 'none';
+            elFeedback.style.display = 'none';
+            elQuizArea.style.display = 'none';
+            elMap.style.display = 'grid';
+
+            locationBtns.forEach((btn, index) => {
+                btn.disabled = index !== 0; // Hanya Pos 1 yang aktif
+            });
+            updateStatus();
+        }
+
+        // --- Event Listeners ---
+        locationBtns.forEach(btn => {
+            btn.onclick = function() {
+                if (!this.disabled) {
+                    loadQuiz(parseInt(this.getAttribute('data-pos')));
+                }
+            };
+        });
+
+        elRestartBtn.onclick = restartGame;
+
+        // Inisialisasi Game
+        restartGame(); 
+    </script>
+</body>
+</html>
